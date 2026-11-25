@@ -1,0 +1,125 @@
+---
+/**
+ * Inner-page hero: dark band with breadcrumbs, title and intro. An optional
+ * wide photograph straddles the dark band and the page background below.
+ */
+import type { ImageMetadata } from 'astro';
+import type { Crumb } from '../lib/schema';
+import Breadcrumbs from './Breadcrumbs.astro';
+import Photo from './Photo.astro';
+
+interface Props {
+  label: string;
+  title: string;
+  intro?: string;
+  crumbs: Crumb[];
+  image?: ImageMetadata;
+  imageAlt?: string;
+  imagePosition?: string;
+}
+
+const { label, title, intro, crumbs, image, imageAlt = '', imagePosition } = Astro.props;
+---
+
+<section class="page-hero theme-dark">
+  <div class="container page-hero__inner">
+    <Breadcrumbs crumbs={crumbs} />
+    <div class="page-hero__grid">
+      <div class="page-hero__title">
+        <p class="eyebrow label"><span>{label}</span></p>
+        <h1 class="h1">{title}</h1>
+      </div>
+      {
+        (intro || Astro.slots.has('default')) && (
+          <div class="page-hero__aside">
+            {intro && <p class="lead muted">{intro}</p>}
+            <slot />
+          </div>
+        )
+      }
+    </div>
+  </div>
+</section>
+{
+  image && (
+    <div class="page-hero-media">
+      <div class="container">
+        <Photo
+          src={image}
+          alt={imageAlt}
+          priority
+          position={imagePosition}
+          sizes="(min-width: 90rem) 90rem, 100vw"
+          class="page-hero-media__photo"
+        />
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .page-hero__inner {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(2rem, 4vw, 3rem) clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .page-hero__grid {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .page-hero__title {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .page-hero__title .h1 {
+    max-width: 16ch;
+  }
+
+  .page-hero__aside {
+    display: grid;
+    gap: 2rem;
+    align-content: end;
+    max-width: 34rem;
+  }
+
+  .page-hero-media {
+    position: relative;
+  }
+
+  .page-hero-media::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 55%;
+    background: var(--ink);
+  }
+
+  .page-hero-media .container {
+    position: relative;
+  }
+
+  .page-hero-media :global(.page-hero-media__photo) {
+    aspect-ratio: 4 / 3;
+  }
+
+  @media (min-width: 40rem) {
+    .page-hero-media :global(.page-hero-media__photo) {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .page-hero-media :global(.page-hero-media__photo) {
+      aspect-ratio: 21 / 9;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .page-hero__grid {
+      grid-template-columns: 1.35fr 1fr;
+      align-items: end;
+    }
+  }
+</style>

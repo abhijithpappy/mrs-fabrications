@@ -1,0 +1,106 @@
+---
+import { media } from '../data/media';
+import { reasons } from '../data/copy';
+import Photo from './Photo.astro';
+
+interface Props {
+  index?: string;
+}
+const { index } = Astro.props;
+---
+
+<section class="section why" aria-labelledby="why-title">
+  <div class="container why__grid">
+    <div class="why__intro">
+      <p class="eyebrow label" data-reveal>
+        {index && <span class="eyebrow__index">{index}</span>}
+        <span>Why choose us</span>
+      </p>
+      <h2 class="h2" id="why-title" data-reveal>The difference is in the details.</h2>
+      <p class="lead muted" data-reveal>
+        Anyone can sell a window. We take responsibility for the whole job — measuring, making and fitting — so it
+        looks right and works properly for years.
+      </p>
+      <Photo
+        src={media.whyUs.src}
+        alt={media.whyUs.alt}
+        ratio="4 / 3"
+        sizes="(min-width: 64rem) 40vw, 100vw"
+        class="why__photo"
+        reveal
+      />
+    </div>
+
+    <ol class="why__list" role="list">
+      {
+        reasons.map((reason, i) => (
+          <li class="why__item" data-reveal style={`--reveal-delay: ${i * 0.06}s`}>
+            <span class="why__num label">{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <h3 class="h3">{reason.title}</h3>
+              <p class="muted">{reason.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .why__grid {
+    display: grid;
+    gap: clamp(3rem, 6vw, 6rem);
+  }
+
+  .why__intro {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  .why__intro .lead {
+    max-width: 34rem;
+  }
+
+  .why__intro :global(.why__photo) {
+    margin-top: 1.5rem;
+  }
+
+  .why__list {
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .why__item {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1rem;
+    padding-block: clamp(1.5rem, 3vw, 2.25rem);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .why__num {
+    padding-top: 0.5rem;
+    color: var(--accent-text);
+  }
+
+  .why__item div {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .why__item p {
+    max-width: 32rem;
+  }
+
+  @media (min-width: 64rem) {
+    .why__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .why__intro {
+      position: sticky;
+      top: calc(var(--header-h) + 2rem);
+    }
+  }
+</style>

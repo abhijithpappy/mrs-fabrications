@@ -1,0 +1,434 @@
+---
+import { business } from '../config/business';
+import { navigation } from '../config/site';
+import { hasPhone, hasWhatsApp, phoneHref, socialLinks, whatsappHref } from '../lib/contact';
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+
+interface Props {
+  /** Transparent header over a full-bleed hero image (home page). */
+  overlay?: boolean;
+}
+
+const { overlay = false } = Astro.props;
+const path = Astro.url.pathname;
+const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+---
+
+<header class:list={['site-header', overlay && 'site-header--overlay']} data-site-header>
+  <div class="site-header__inner container">
+    <a href="/" class="site-header__brand" aria-label={`${business.name} — home`}>
+      <Logo />
+    </a>
+
+    <nav class="site-nav" aria-label="Main">
+      <ul role="list">
+        {
+          navigation.slice(1).map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      {
+        hasPhone && (
+          <a href={phoneHref} class="site-header__phone">
+            <Icon name="phone" />
+            <span>{business.phone}</span>
+          </a>
+        )
+      }
+      <a href="/contact/#enquiry" class="btn btn--accent site-header__cta">Get a quote</a>
+      {
+        hasPhone && (
+          <a href={phoneHref} class="site-header__icon-btn" aria-label={`Call ${business.name}`}>
+            <Icon name="phone" />
+          </a>
+        )
+      }
+      <button
+        type="button"
+        class="site-header__icon-btn site-header__menu-btn"
+        aria-haspopup="dialog"
+        aria-controls="site-menu"
+        aria-expanded="false"
+        data-menu-open
+      >
+        <Icon name="menu" />
+        <span class="visually-hidden">Open menu</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<dialog id="site-menu" class="menu theme-dark" aria-label="Menu" data-menu>
+  <div class="menu__top container">
+    <a href="/" class="site-header__brand" aria-label={`${business.name} — home`}><Logo /></a>
+    <button type="button" class="site-header__icon-btn" data-menu-close>
+      <Icon name="close" />
+      <span class="visually-hidden">Close menu</span>
+    </button>
+  </div>
+  <nav class="menu__nav container" aria-label="Mobile">
+    <ol role="list">
+      {
+        navigation.map((item, i) => (
+          <li>
+            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+              <span class="label">{String(i + 1).padStart(2, '0')}</span>
+              <span class="menu__link-text">{item.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </nav>
+  <div class="menu__footer container">
+    <div class="btn-row">
+      <a href="/contact/#enquiry" class="btn btn--accent">Get a free quote</a>
+      {
+        hasWhatsApp && (
+          <a href={whatsappHref()} class="btn btn--whatsapp" target="_blank" rel="noopener">
+            <Icon name="whatsapp" /> WhatsApp
+          </a>
+        )
+      }
+      {
+        hasPhone && (
+          <a href={phoneHref} class="btn btn--ghost">
+            <Icon name="phone" /> {business.phone}
+          </a>
+        )
+      }
+    </div>
+    {
+      socialLinks.length > 0 && (
+        <ul class="menu__social" role="list">
+          {socialLinks.map((s) => (
+            <li>
+              <a href={s.href} target="_blank" rel="noopener">
+                <Icon name={s.icon} label={s.label} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</dialog>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-site-header]');
+  const menu = document.querySelector<HTMLDialogElement>('[data-menu]');
+  const openBtn = document.querySelector<HTMLButtonElement>('[data-menu-open]');
+
+  // Solid header once the page scrolls.
+  if (header) {
+    let ticking = false;
+    const update = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 24);
+      ticking = false;
+    };
+    update();
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(update);
+          ticking = true;
+        }
+      },
+      { passive: true },
+    );
+  }
+
+  // Mobile menu (native <dialog>: focus trap, Esc and inert background built in).
+  if (menu && openBtn) {
+    const close = () => menu.close();
+    openBtn.addEventListener('click', () => {
+      menu.showModal();
+      openBtn.setAttribute('aria-expanded', 'true');
+    });
+    menu.addEventListener('close', () => openBtn.setAttribute('aria-expanded', 'false'));
+    menu.querySelector('[data-menu-close]')?.addEventListener('click', close);
+    menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', close));
+    window.matchMedia('(min-width: 64rem)').addEventListener('change', (e) => e.matches && close());
+  }
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--header-h);
+    background: rgb(244 242 238 / 0.92);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      color 0.35s ease;
+  }
+
+  .site-header--overlay {
+    position: fixed;
+    inset: 0 0 auto;
+    color: var(--white);
+    background: linear-gradient(to bottom, rgb(20 22 25 / 0.55), rgb(20 22 25 / 0));
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .site-header--overlay.is-scrolled {
+    color: var(--ink);
+    background: rgb(244 242 238 / 0.94);
+    border-bottom-color: var(--line);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    height: 100%;
+  }
+
+  .site-header__brand {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .site-nav ul {
+    display: flex;
+    gap: clamp(1.25rem, 2.5vw, 2.5rem);
+  }
+
+  .site-nav a {
+    position: relative;
+    padding-block: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .site-nav a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s var(--ease-out);
+  }
+
+  .site-nav a:hover::after,
+  .site-nav a[aria-current='page']::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .site-nav a[aria-current='page']::after {
+    background: var(--accent);
+    height: 2px;
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .site-header__phone {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .site-header__phone svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .site-header__cta {
+    display: none;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.125rem;
+  }
+
+  .site-header__icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid currentColor;
+    border-color: color-mix(in srgb, currentColor 30%, transparent);
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    transition: background-color 0.2s ease;
+  }
+
+  .site-header__icon-btn:hover {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  .site-header__icon-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  @media (min-width: 36rem) {
+    .site-header__cta {
+      display: inline-flex;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .site-nav {
+      display: block;
+    }
+
+    .site-header__icon-btn {
+      display: none;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .site-header__phone {
+      display: inline-flex;
+    }
+  }
+
+  /* ----- Mobile menu ----- */
+
+  .menu {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+  }
+
+  .menu[open] {
+    display: flex;
+  }
+
+  .menu::backdrop {
+    background: var(--ink);
+  }
+
+  .menu__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-h);
+    flex: none;
+  }
+
+  .menu__top .site-header__icon-btn {
+    display: inline-grid;
+  }
+
+  .menu__nav {
+    flex: 1;
+    padding-block: 2rem;
+  }
+
+  .menu__nav ol {
+    border-top: 1px solid var(--line);
+  }
+
+  .menu__nav a {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+  }
+
+  .menu__nav .label {
+    color: var(--text-muted);
+  }
+
+  .menu__link-text {
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-stretch: 110%;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .menu__nav a[aria-current='page'] .menu__link-text {
+    color: var(--accent-on-dark);
+  }
+
+  .menu__footer {
+    display: grid;
+    gap: 1.5rem;
+    padding-block: 1.5rem 2.5rem;
+  }
+
+  .menu__footer .btn {
+    flex: 1 1 12rem;
+  }
+
+  .menu__social {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .menu__social a {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--line);
+  }
+
+  .menu__social svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .menu[open] {
+      animation: menu-in 0.45s var(--ease-out);
+    }
+
+    @keyframes menu-in {
+      from {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+    }
+  }
+</style>

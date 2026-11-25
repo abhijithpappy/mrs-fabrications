@@ -1,0 +1,363 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import CTASection from '../../components/CTASection.astro';
+import Icon from '../../components/Icon.astro';
+import PageHero from '../../components/PageHero.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import { business } from '../../config/business';
+import { hasWhatsApp, locationLabel, whatsappHref } from '../../lib/contact';
+import { breadcrumbSchema, serviceSchema } from '../../lib/schema';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const getStaticPaths = (async () => {
+  const services = (await getCollection('services', ({ data }) => data.published)).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
+  return services.map((service, i) => ({
+    params: { slug: service.id },
+    props: { service, index: i, all: services },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  service: CollectionEntry<'services'>;
+  index: number;
+  all: CollectionEntry<'services'>[];
+}
+
+const { service, index, all } = Astro.props;
+const { data } = service;
+const { Content } = await render(service);
+
+const related = (
+  await getCollection('projects', ({ data: p }) => p.published && p.category.id === service.id)
+).sort((a, b) => a.data.order - b.data.order);
+
+const others = all.filter((s) => s.id !== service.id);
+const message = `Hello ${business.name}, I'm interested in ${data.title.toLowerCase()}. Could you share more details or arrange a site visit?`;
+const quoteHref = `/contact/?service=${service.id}#enquiry`;
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Services', href: '/services/' },
+  { name: data.title, href: `/services/${service.id}/` },
+];
+---
+
+<BaseLayout
+  title={`${data.title} in ${locationLabel}`}
+  description={data.seoDescription ?? data.summary}
+  image={data.image}
+  imageAlt={data.imageAlt}
+  whatsappMessage={message}
+  schema={[
+    breadcrumbSchema(crumbs, Astro.site),
+    serviceSchema({ title: data.title, summary: data.summary, slug: service.id }, Astro.site),
+  ]}
+>
+  <PageHero
+    label={`Service ${String(index + 1).padStart(2, '0')}`}
+    title={data.title}
+    intro={data.summary}
+    crumbs={crumbs}
+    image={data.image}
+    imageAlt={data.imageAlt}
+  >
+    <div class="btn-row">
+      <a href={quoteHref} class="btn btn--accent">Get a free quote <Icon name="arrow" class="btn__arrow" /></a>
+      {
+        hasWhatsApp && (
+          <a href={whatsappHref(message)} class="btn btn--whatsapp" target="_blank" rel="noopener">
+            <Icon name="whatsapp" /> WhatsApp
+          </a>
+        )
+      }
+    </div>
+  </PageHero>
+
+  <!-- Overview -->
+  <section class="section" aria-labelledby="overview-title">
+    <div class="container overview">
+      <div class="overview__head">
+        <p class="eyebrow label" data-reveal><span class="eyebrow__index">01</span><span>Overview</span></p>
+        <h2 id="overview-title" class="h2" data-reveal>How we approach {data.shortTitle.toLowerCase()}</h2>
+      </div>
+      <div class="prose" data-reveal>
+        <Content />
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  {
+    data.benefits.length > 0 && (
+      <section class="section theme-dark" aria-labelledby="benefits-title">
+        <div class="container">
+          <SectionHeading index="02" label="Benefits" title={`Why choose aluminium ${data.shortTitle.toLowerCase()}`} id="benefits-title" />
+          <ul class="benefits" role="list">
+            {data.benefits.map((b, i) => (
+              <li data-reveal style={`--reveal-delay: ${i * 0.06}s`}>
+                <span class="label benefits__num">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="h4">{b.title}</h3>
+                <p class="muted">{b.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Applications & options -->
+  <section class="section" aria-label="Applications and options">
+    <div class="container lists">
+      {
+        data.applications.length > 0 && (
+          <div class="lists__col" data-reveal>
+            <p class="eyebrow label">
+              <span class="eyebrow__index">03</span>
+              <span>Applications</span>
+            </p>
+            <h2 class="h3">Where it works best</h2>
+            <ul role="list" class="lists__items">
+              {data.applications.map((a) => (
+                <li>
+                  <Icon name="check" />
+                  {a}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+      {
+        data.options.length > 0 && (
+          <div class="lists__col" data-reveal>
+            <p class="eyebrow label">
+              <span class="eyebrow__index">04</span>
+              <span>Options</span>
+            </p>
+            <h2 class="h3">Options we can discuss</h2>
+            <ul role="list" class="lists__items">
+              {data.options.map((o) => (
+                <li>
+                  <Icon name="plus" />
+                  {o}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Related projects -->
+  {
+    related.length > 0 && (
+      <section class="section theme-mist" aria-labelledby="related-title">
+        <div class="container">
+          <SectionHeading index="05" label="Related projects" title={`${data.shortTitle} in practice`} id="related-title">
+            <a slot="actions" href={`/projects/?category=${service.id}`} class="link-arrow">
+              All {data.shortTitle.toLowerCase()} projects <Icon name="arrow" />
+            </a>
+          </SectionHeading>
+          <div class="related">
+            {related.slice(0, 3).map((p) => (
+              <div data-reveal>
+                <ProjectCard project={p} categoryLabel={data.shortTitle} sizes="(min-width: 64rem) 30vw, 100vw" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Other services -->
+  <section class="section--tight" aria-labelledby="others-title">
+    <div class="container">
+      <h2 id="others-title" class="label muted others__title">Other services</h2>
+      <ul class="others" role="list">
+        {
+          others.map((s) => (
+            <li>
+              <a href={`/services/${s.id}/`}>
+                <span>{s.data.title}</span>
+                <Icon name="arrow-up-right" />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <CTASection
+    title={`Let’s plan your ${data.shortTitle.toLowerCase()}`}
+    service={service.id}
+    whatsappMessage={message}
+  />
+</BaseLayout>
+
+<style>
+  .overview {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .overview__head {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  .overview__head .h2 {
+    max-width: 14ch;
+  }
+
+  @media (min-width: 64rem) {
+    .overview {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 6vw, 7rem);
+    }
+  }
+
+  .benefits {
+    display: grid;
+    gap: 0 2rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .benefits li {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    padding-block: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .benefits__num {
+    color: var(--accent-on-dark);
+  }
+
+  @media (min-width: 48rem) {
+    .benefits {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .benefits {
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 0;
+    }
+
+    .benefits li {
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 0;
+    }
+  }
+
+  .lists {
+    display: grid;
+    gap: 4rem;
+  }
+
+  .lists__col {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .lists__items {
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .lists__items li {
+    display: flex;
+    gap: 1rem;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .lists__items :global(svg) {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15em;
+    color: var(--accent-text);
+  }
+
+  @media (min-width: 64rem) {
+    .lists {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 6vw, 7rem);
+    }
+  }
+
+  .related {
+    display: grid;
+    gap: 3rem 2rem;
+  }
+
+  @media (min-width: 48rem) {
+    .related {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .related {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .others__title {
+    margin-bottom: 1.25rem;
+  }
+
+  .others {
+    display: grid;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .others a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--line);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .others :global(svg) {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--text-muted);
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .others a:hover :global(svg) {
+    transform: translate(3px, -3px);
+    color: var(--accent-text);
+  }
+
+  @media (min-width: 48rem) {
+    .others {
+      grid-template-columns: repeat(2, 1fr);
+      column-gap: 3rem;
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .others {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,249 @@
+---
+import { getCollection } from 'astro:content';
+import CTASection from '../../components/CTASection.astro';
+import Icon from '../../components/Icon.astro';
+import PageHero from '../../components/PageHero.astro';
+import Photo from '../../components/Photo.astro';
+import { business } from '../../config/business';
+import { media } from '../../data/media';
+import { hasWhatsApp, locationLabel, whatsappHref } from '../../lib/contact';
+import { breadcrumbSchema } from '../../lib/schema';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const services = (await getCollection('services', ({ data }) => data.published)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Services', href: '/services/' },
+];
+---
+
+<BaseLayout
+  title="Services"
+  description={`Aluminium windows, doors, glass partitions, sliding systems, shopfronts and custom fabrication by ${business.name} in ${locationLabel}. Made to measure and professionally installed.`}
+  image={media.servicesHero.src}
+  imageAlt={media.servicesHero.alt}
+  schema={[breadcrumbSchema(crumbs, Astro.site)]}
+>
+  <PageHero
+    label="Services"
+    title="Aluminium & glass systems for every opening"
+    intro="From a single bathroom window to a full shopfront, every system we make is designed for its space, fabricated to measure and installed by our own team."
+    crumbs={crumbs}
+    image={media.servicesHero.src}
+    imageAlt={media.servicesHero.alt}
+  >
+    <nav aria-label="Services on this page">
+      <ul class="jump label" role="list">
+        {
+          services.map((s) => (
+            <li>
+              <a href={`#${s.id}`}>{s.data.shortTitle}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </PageHero>
+
+  <section class="section" aria-label="Our services">
+    <div class="container">
+      <ol class="service-list" role="list">
+        {
+          services.map((s, i) => (
+            <li class="service" id={s.id}>
+              <a href={`/services/${s.id}/`} class="service__media" tabindex="-1" aria-hidden="true">
+                <Photo
+                  src={s.data.image}
+                  alt=""
+                  ratio="4 / 3"
+                  sizes="(min-width: 64rem) 50vw, 100vw"
+                  reveal
+                />
+              </a>
+              <div class="service__content" data-reveal>
+                <p class="eyebrow label">
+                  <span class="eyebrow__index">{String(i + 1).padStart(2, '0')}</span>
+                  <span>{s.data.shortTitle}</span>
+                </p>
+                <h2 class="h2">
+                  <a href={`/services/${s.id}/`}>{s.data.title}</a>
+                </h2>
+                <p class="lead muted">{s.data.summary}</p>
+                {s.data.applications.length > 0 && (
+                  <div class="service__apps">
+                    <h3 class="label muted">Ideal for</h3>
+                    <ul role="list">
+                      {s.data.applications.slice(0, 5).map((app) => (
+                        <li>{app}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div class="btn-row">
+                  <a href={`/services/${s.id}/`} class="btn btn--ghost">
+                    Explore {s.data.shortTitle.toLowerCase()} <Icon name="arrow" class="btn__arrow" />
+                  </a>
+                  <a href={`/contact/?service=${s.id}#enquiry`} class="btn btn--accent">
+                    Get a quote
+                  </a>
+                </div>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="section--tight theme-mist" aria-labelledby="unsure-title">
+    <div class="container unsure">
+      <div>
+        <h2 id="unsure-title" class="h3">Not sure which system you need?</h2>
+        <p class="muted">
+          Describe the space or send us a photo — we’ll suggest the right option and arrange a site visit to measure.
+        </p>
+      </div>
+      <div class="btn-row">
+        {
+          hasWhatsApp && (
+            <a
+              href={whatsappHref(
+                `Hello ${business.name}, I'm not sure which aluminium / glass system I need. Can you advise?`,
+              )}
+              class="btn btn--whatsapp"
+              target="_blank"
+              rel="noopener"
+            >
+              <Icon name="whatsapp" /> Ask on WhatsApp
+            </a>
+          )
+        }
+        <a href="/contact/#enquiry" class="btn">Send an enquiry <Icon name="arrow" class="btn__arrow" /></a>
+      </div>
+    </div>
+  </section>
+
+  <CTASection />
+</BaseLayout>
+
+<style>
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .jump a {
+    display: inline-block;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--line-strong);
+    text-decoration: none;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .jump a:hover {
+    background: var(--white);
+    color: var(--ink);
+  }
+
+  .service-list {
+    display: grid;
+    gap: clamp(4rem, 9vw, 8rem);
+  }
+
+  .service {
+    display: grid;
+    gap: 2rem;
+    scroll-margin-top: calc(var(--header-h) + 2rem);
+  }
+
+  .service__content {
+    display: grid;
+    gap: 1.25rem;
+    align-content: center;
+    justify-items: start;
+  }
+
+  .service__content h2 a {
+    text-decoration: none;
+  }
+
+  .service__content h2 a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .service__content .lead {
+    max-width: 34rem;
+  }
+
+  .service__apps {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 34rem;
+    padding-block: 1.25rem;
+    border-block: 1px solid var(--line);
+  }
+
+  .service__apps ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+  }
+
+  .service__apps li {
+    position: relative;
+    padding-left: 0.9rem;
+    font-size: var(--fs-small);
+  }
+
+  .service__apps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    background: var(--accent);
+  }
+
+  .service__media {
+    display: block;
+  }
+
+  @media (min-width: 64rem) {
+    .service {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 6vw, 7rem);
+      align-items: center;
+    }
+
+    .service:nth-child(even) .service__media {
+      order: 2;
+    }
+  }
+
+  .unsure {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .unsure > div:first-child {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 40rem;
+  }
+
+  @media (min-width: 64rem) {
+    .unsure {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+  }
+</style>

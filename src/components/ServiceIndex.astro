@@ -1,0 +1,181 @@
+---
+/**
+ * Editorial index of services. On wide screens a sticky photo frame swaps to
+ * the hovered/focused service; on small screens each row has a thumbnail.
+ */
+import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import Photo from './Photo.astro';
+
+interface Props {
+  services: CollectionEntry<'services'>[];
+}
+const { services } = Astro.props;
+---
+
+<div class="service-index" data-service-index>
+  <div class="service-index__frame" aria-hidden="true">
+    {
+      services.map((s, i) => (
+        <div class:list={['service-index__slide', i === 0 && 'is-active']} data-slide={i}>
+          <Photo src={s.data.image} alt="" ratio="4 / 5" sizes="(min-width: 64rem) 40vw, 1px" />
+        </div>
+      ))
+    }
+  </div>
+
+  <ol class="service-index__list" role="list">
+    {
+      services.map((s, i) => (
+        <li data-reveal style={`--reveal-delay: ${i * 0.05}s`}>
+          <a href={`/services/${s.id}/`} class="service-row" data-row={i}>
+            <span class="service-row__index label">{String(i + 1).padStart(2, '0')}</span>
+            <span class="service-row__body">
+              <span class="service-row__title h3">{s.data.title}</span>
+              <span class="service-row__summary">{s.data.summary}</span>
+            </span>
+            <span class="service-row__thumb">
+              <Photo src={s.data.image} alt="" ratio="1 / 1" sizes="7rem" hideLabel />
+            </span>
+            <Icon name="arrow-up-right" class="service-row__arrow" />
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-service-index]').forEach((root) => {
+    const slides = root.querySelectorAll<HTMLElement>('[data-slide]');
+    const activate = (i: string) => {
+      slides.forEach((s) => s.classList.toggle('is-active', s.dataset.slide === i));
+    };
+    root.querySelectorAll<HTMLElement>('[data-row]').forEach((row) => {
+      const i = row.dataset.row!;
+      row.addEventListener('pointerenter', () => activate(i));
+      row.addEventListener('focus', () => activate(i));
+    });
+  });
+</script>
+
+<style>
+  .service-index {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .service-index__frame {
+    display: none;
+  }
+
+  .service-index__list {
+    border-top: 1px solid var(--line);
+  }
+
+  .service-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem 1.25rem;
+    align-items: start;
+    padding-block: 1.75rem;
+    border-bottom: 1px solid var(--line);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .service-row__index {
+    padding-top: 0.45rem;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+  }
+
+  .service-row__body {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .service-row__title {
+    transition: transform 0.5s var(--ease-out);
+  }
+
+  .service-row__summary {
+    max-width: 34rem;
+    color: var(--text-muted);
+    font-size: var(--fs-small);
+    line-height: 1.6;
+  }
+
+  .service-row__thumb {
+    width: 5rem;
+  }
+
+  .service-row :global(.service-row__arrow) {
+    display: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--text-muted);
+    transition:
+      transform 0.4s var(--ease-out),
+      color 0.3s ease;
+  }
+
+  .service-row:hover .service-row__index,
+  .service-row:focus-visible .service-row__index {
+    color: var(--accent-text);
+  }
+
+  .service-row:hover :global(.service-row__arrow),
+  .service-row:focus-visible :global(.service-row__arrow) {
+    color: var(--accent-text);
+    transform: translate(3px, -3px);
+  }
+
+  @media (min-width: 40rem) {
+    .service-row__thumb {
+      width: 7rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .service-index {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: clamp(3rem, 6vw, 7rem);
+      align-items: start;
+    }
+
+    .service-index__frame {
+      display: grid;
+      position: sticky;
+      top: calc(var(--header-h) + 2rem);
+    }
+
+    .service-index__slide {
+      grid-area: 1 / 1;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .service-index__slide.is-active {
+      opacity: 1;
+    }
+
+    .service-row {
+      grid-template-columns: 3.5rem 1fr auto;
+      padding-block: 2.25rem;
+    }
+
+    .service-row__thumb {
+      display: none;
+    }
+
+    .service-row :global(.service-row__arrow) {
+      display: block;
+    }
+
+    .service-row:hover .service-row__title,
+    .service-row:focus-visible .service-row__title {
+      transform: translateX(0.5rem);
+    }
+  }
+</style>

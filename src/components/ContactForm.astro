@@ -1,0 +1,489 @@
+---
+/**
+ * Enquiry form.
+ * - Submits to Netlify Forms (detected at deploy time from this static HTML).
+ * - Works without JavaScript (falls back to a normal POST → /thank-you/).
+ * - With JavaScript: inline validation, accessible errors, AJAX submit.
+ * - Optional "Send on WhatsApp" composes the enquiry as a WhatsApp message.
+ */
+import { getCollection } from 'astro:content';
+import { business } from '../config/business';
+import { siteSettings } from '../config/site';
+import { hasEmail, hasPhone, hasWhatsApp, phoneHref, whatsappHref, whatsappNumber } from '../lib/contact';
+import Icon from './Icon.astro';
+
+const services = (await getCollection('services', ({ data }) => data.published)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const formName = siteSettings.enquiryForm.name;
+const offerWhatsApp = siteSettings.enquiryForm.offerWhatsApp && hasWhatsApp;
+---
+
+<div class="enquiry" data-enquiry>
+  <form
+    name={formName}
+    method="POST"
+    action="/thank-you/"
+    data-netlify="true"
+    netlify-honeypot="bot-field"
+    novalidate
+    data-enquiry-form
+    data-business={business.name}
+    data-whatsapp={offerWhatsApp ? whatsappNumber : undefined}
+    aria-describedby="form-intro"
+  >
+    <input type="hidden" name="form-name" value={formName} />
+    <p class="visually-hidden" aria-hidden="true">
+      <label>Leave this field empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+    </p>
+
+    <p id="form-intro" class="enquiry__intro muted">
+      Fields marked <span aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.
+    </p>
+
+    <div class="enquiry__errors" role="alert" tabindex="-1" hidden data-error-summary>
+      <p class="enquiry__errors-title">Please check the following:</p>
+      <ul data-error-list></ul>
+    </div>
+
+    <div class="enquiry__grid">
+      <div class="field">
+        <label class="field__label" for="f-name">Your name <span aria-hidden="true">*</span></label>
+        <input
+          class="field__control"
+          id="f-name"
+          name="name"
+          type="text"
+          autocomplete="name"
+          required
+          minlength="2"
+          maxlength="80"
+          aria-describedby="f-name-error"
+        />
+        <p class="field__error" id="f-name-error" data-error-for="name"></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-phone">Phone / WhatsApp <span aria-hidden="true">*</span></label>
+        <input
+          class="field__control"
+          id="f-phone"
+          name="phone"
+          type="tel"
+          inputmode="tel"
+          autocomplete="tel"
+          required
+          maxlength="20"
+          aria-describedby="f-phone-error"
+        />
+        <p class="field__error" id="f-phone-error" data-error-for="phone"></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-email">Email <span class="field__hint">(optional)</span></label>
+        <input
+          class="field__control"
+          id="f-email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          maxlength="120"
+          aria-describedby="f-email-error"
+        />
+        <p class="field__error" id="f-email-error" data-error-for="email"></p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="f-location">Site location <span class="field__hint">(town / area)</span></label>
+        <input
+          class="field__control"
+          id="f-location"
+          name="location"
+          type="text"
+          autocomplete="address-level2"
+          maxlength="100"
+        />
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="f-service">What do you need?</label>
+        <select class="field__control" id="f-service" name="service" data-service-select>
+          <option value="">Choose a service (optional)</option>
+          {services.map((s) => <option value={s.data.title} data-id={s.id}>{s.data.title}</option>)}
+          <option value="Something else / not sure">Something else / not sure</option>
+        </select>
+      </div>
+
+      <div class="field field--full">
+        <label class="field__label" for="f-message">Tell us about your project <span aria-hidden="true">*</span></label>
+        <textarea
+          class="field__control"
+          id="f-message"
+          name="message"
+          required
+          minlength="10"
+          maxlength="2000"
+          rows="5"
+          placeholder="e.g. number of windows or doors, approximate sizes, new build or replacement, when you’d like it done"
+          aria-describedby="f-message-error"></textarea>
+        <p class="field__error" id="f-message-error" data-error-for="message"></p>
+      </div>
+    </div>
+
+    <div class="enquiry__actions">
+      <button type="submit" class="btn btn--accent" data-submit>
+        <span data-submit-label>Send enquiry</span>
+        <Icon name="arrow" class="btn__arrow" />
+      </button>
+      {
+        offerWhatsApp && (
+          <button type="button" class="btn btn--whatsapp" data-send-whatsapp>
+            <Icon name="whatsapp" /> Send on WhatsApp instead
+          </button>
+        )
+      }
+    </div>
+
+    <p class="enquiry__privacy muted">
+      We only use your details to reply to your enquiry. See our <a href="/privacy/">privacy notice</a>.
+    </p>
+
+    <div class="enquiry__status" role="status" aria-live="polite" data-status></div>
+  </form>
+
+  <div class="enquiry__success" hidden tabindex="-1" data-success>
+    <span class="enquiry__success-icon"><Icon name="check" /></span>
+    <h3 class="h3">Thank you — your enquiry has been sent.</h3>
+    <p class="muted">
+      We’ll be in touch soon to talk through your project and arrange a site visit if needed.
+      {hasPhone && ' If it’s urgent, please call us.'}
+    </p>
+    <div class="btn-row">
+      {
+        hasPhone && (
+          <a href={phoneHref} class="btn">
+            <Icon name="phone" /> {business.phone}
+          </a>
+        )
+      }
+      {
+        hasWhatsApp && (
+          <a href={whatsappHref()} class="btn btn--whatsapp" target="_blank" rel="noopener">
+            <Icon name="whatsapp" /> WhatsApp
+          </a>
+        )
+      }
+      <button type="button" class="btn btn--ghost" data-reset>Send another enquiry</button>
+    </div>
+  </div>
+
+  <template data-error-fallback>
+    <p>
+      Sorry — your enquiry couldn’t be sent just now. Please try again
+      {hasPhone || hasWhatsApp || hasEmail ? ', or contact us directly:' : ' in a few minutes.'}
+    </p>
+    {
+      (hasPhone || hasWhatsApp || hasEmail) && (
+        <p class="btn-row">
+          {hasPhone && (
+            <a href={phoneHref} class="btn btn--ghost">
+              <Icon name="phone" /> Call
+            </a>
+          )}
+          {hasWhatsApp && (
+            <a href={whatsappHref()} class="btn btn--whatsapp" target="_blank" rel="noopener">
+              <Icon name="whatsapp" /> WhatsApp
+            </a>
+          )}
+          {hasEmail && (
+            <a href={`mailto:${business.email}`} class="btn btn--ghost">
+              <Icon name="mail" /> Email
+            </a>
+          )}
+        </p>
+      )
+    }
+  </template>
+</div>
+
+<script>
+  type FieldName = 'name' | 'phone' | 'email' | 'message';
+
+  const root = document.querySelector<HTMLElement>('[data-enquiry]');
+  const form = root?.querySelector<HTMLFormElement>('[data-enquiry-form]');
+
+  if (root && form) {
+    const summary = form.querySelector<HTMLElement>('[data-error-summary]')!;
+    const summaryList = form.querySelector<HTMLElement>('[data-error-list]')!;
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const success = root.querySelector<HTMLElement>('[data-success]')!;
+    const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+    const fallback = root.querySelector<HTMLTemplateElement>('[data-error-fallback]');
+    let attempted = false;
+
+    const labels: Record<FieldName, string> = {
+      name: 'Your name',
+      phone: 'Phone / WhatsApp',
+      email: 'Email',
+      message: 'Project details',
+    };
+
+    const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | null)?.value.trim() ?? '';
+
+    const rules: Record<FieldName, (v: string) => string> = {
+      name: (v) => (v.length < 2 ? 'Please enter your name.' : ''),
+      phone: (v) => {
+        if (!v) return 'Please enter a phone number so we can reach you.';
+        const digits = v.replace(/\D/g, '');
+        if (/[^\d\s()+-]/.test(v) || digits.length < 10 || digits.length > 15)
+          return 'Please enter a valid phone number, e.g. 98470 12345 or +91 98470 12345.';
+        return '';
+      },
+      email: (v) => (v && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? 'Please enter a valid email address.' : ''),
+      message: (v) =>
+        v.length < 10 ? 'Please tell us a little about your project (at least 10 characters).' : '',
+    };
+
+    const setError = (name: FieldName, message: string) => {
+      const input = form.elements.namedItem(name) as HTMLInputElement;
+      const slot = form.querySelector<HTMLElement>(`[data-error-for="${name}"]`);
+      input.setAttribute('aria-invalid', String(Boolean(message)));
+      if (slot) slot.textContent = message;
+    };
+
+    const validate = (fields: FieldName[]) => {
+      const errors: { name: FieldName; message: string }[] = [];
+      fields.forEach((name) => {
+        const message = rules[name](value(name));
+        setError(name, message);
+        if (message) errors.push({ name, message });
+      });
+      return errors;
+    };
+
+    const showSummary = (errors: { name: FieldName; message: string }[]) => {
+      summaryList.replaceChildren(
+        ...errors.map(({ name, message }) => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = `#f-${name}`;
+          a.textContent = `${labels[name]}: ${message}`;
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            (form.elements.namedItem(name) as HTMLElement).focus();
+          });
+          li.append(a);
+          return li;
+        }),
+      );
+      summary.hidden = errors.length === 0;
+      if (errors.length) summary.focus();
+    };
+
+    // Re-validate a field as the user corrects it (after the first attempt).
+    (['name', 'phone', 'email', 'message'] as FieldName[]).forEach((name) => {
+      const input = form.elements.namedItem(name) as HTMLInputElement;
+      input.addEventListener('blur', () => {
+        if (attempted || input.value.trim()) validate([name]);
+      });
+      input.addEventListener('input', () => {
+        if (input.getAttribute('aria-invalid') === 'true') validate([name]);
+      });
+    });
+
+    // Preselect a service from ?service=<id> (used by "Get a quote" buttons).
+    const serviceParam = new URLSearchParams(location.search).get('service');
+    if (serviceParam) {
+      const select = form.querySelector<HTMLSelectElement>('[data-service-select]');
+      const option = select?.querySelector<HTMLOptionElement>(`option[data-id="${CSS.escape(serviceParam)}"]`);
+      if (select && option) select.value = option.value;
+    }
+
+    const setBusy = (busy: boolean) => {
+      submitBtn.disabled = busy;
+      submitBtn.setAttribute('aria-busy', String(busy));
+      submitLabel.textContent = busy ? 'Sending…' : 'Send enquiry';
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      attempted = true;
+      status.replaceChildren();
+      const errors = validate(['name', 'phone', 'email', 'message']);
+      showSummary(errors);
+      if (errors.length) return;
+
+      setBusy(true);
+      try {
+        const body = new URLSearchParams();
+        new FormData(form).forEach((v, k) => body.append(k, String(v)));
+        const response = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        form.reset();
+        form.hidden = true;
+        success.hidden = false;
+        success.focus();
+      } catch {
+        if (fallback) status.replaceChildren(fallback.content.cloneNode(true));
+        status.classList.add('is-error');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    // Compose the enquiry as a WhatsApp message.
+    form.querySelector('[data-send-whatsapp]')?.addEventListener('click', () => {
+      attempted = true;
+      const errors = validate(['name', 'message']);
+      ['phone', 'email'].forEach((f) => setError(f as FieldName, ''));
+      showSummary(errors);
+      if (errors.length) return;
+
+      const lines = [
+        `Hello ${form.dataset.business}, I'd like a quote.`,
+        '',
+        `Name: ${value('name')}`,
+        value('phone') ? `Phone: ${value('phone')}` : null,
+        value('email') ? `Email: ${value('email')}` : null,
+        value('location') ? `Location: ${value('location')}` : null,
+        value('service') ? `Service: ${value('service')}` : null,
+        '',
+        value('message'),
+      ].filter((line): line is string => line !== null);
+
+      const url = `https://wa.me/${form.dataset.whatsapp}?text=${encodeURIComponent(lines.join('\n'))}`;
+      window.open(url, '_blank', 'noopener');
+    });
+
+    root.querySelector('[data-reset]')?.addEventListener('click', () => {
+      success.hidden = true;
+      form.hidden = false;
+      attempted = false;
+      (form.elements.namedItem('name') as HTMLElement).focus();
+    });
+  }
+</script>
+
+<style>
+  .enquiry {
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background: var(--white);
+    border: 1px solid var(--line);
+  }
+
+  .enquiry__intro {
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .enquiry__grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 40rem) {
+    .enquiry__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .field--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .enquiry__errors {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid #b3261e;
+    background: #fdf1f0;
+    font-size: 0.9375rem;
+  }
+
+  .enquiry__errors:focus {
+    outline: 2px solid #b3261e;
+    outline-offset: 2px;
+  }
+
+  .enquiry__errors-title {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .enquiry__errors ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+
+  .enquiry__errors a {
+    color: #8c1d16;
+  }
+
+  .enquiry__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .enquiry__actions .btn {
+    flex: 1 1 14rem;
+  }
+
+  .enquiry__actions .btn[disabled] {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  .enquiry__privacy {
+    margin-top: 1.25rem;
+    font-size: 0.8125rem;
+  }
+
+  .enquiry__status:empty {
+    display: none;
+  }
+
+  .enquiry__status {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid #b3261e;
+    background: #fdf1f0;
+    font-size: 0.9375rem;
+  }
+
+  .enquiry__success {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+  }
+
+  .enquiry__success[hidden] {
+    display: none;
+  }
+
+  .enquiry__success:focus {
+    outline: none;
+  }
+
+  .enquiry__success-icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--ink);
+  }
+
+  .enquiry__success-icon :global(svg) {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+</style>

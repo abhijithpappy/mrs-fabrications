@@ -1,0 +1,93 @@
+---
+/**
+ * Customer testimonials — renders only when src/data/testimonials.ts has entries.
+ */
+import { business } from '../config/business';
+import { testimonials } from '../data/testimonials';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+  index?: string;
+}
+const { index } = Astro.props;
+---
+
+{
+  testimonials.length > 0 && (
+    <section class="section theme-white" aria-labelledby="testimonials-title">
+      <div class="container">
+        <SectionHeading index={index} label="Testimonials" title="What our customers say" id="testimonials-title">
+          {business.googleReviewsUrl && (
+            <a slot="actions" href={business.googleReviewsUrl} class="link-arrow" target="_blank" rel="noopener">
+              Read reviews on Google
+            </a>
+          )}
+        </SectionHeading>
+        <ul class="testimonials" role="list">
+          {testimonials.map((t, i) => (
+            <li class="testimonial" data-reveal style={`--reveal-delay: ${i * 0.08}s`}>
+              <figure>
+                <blockquote>
+                  <p>“{t.quote}”</p>
+                </blockquote>
+                <figcaption>
+                  <span class="testimonial__name">{t.name}</span>
+                  {t.context && <span class="label muted">{t.context}</span>}
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .testimonials {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .testimonial {
+    padding-block: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .testimonial figure {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .testimonial blockquote {
+    margin: 0;
+    font-size: var(--fs-h4);
+    font-weight: 450;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    text-wrap: pretty;
+  }
+
+  .testimonial figcaption {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .testimonial__name {
+    font-weight: 600;
+  }
+
+  @media (min-width: 64rem) {
+    .testimonials {
+      grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+      column-gap: 3rem;
+      border-top: 0;
+    }
+
+    .testimonial {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+    }
+  }
+</style>

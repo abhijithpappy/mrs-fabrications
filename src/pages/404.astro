@@ -1,0 +1,56 @@
+---
+import Icon from '../components/Icon.astro';
+import Photo from '../components/Photo.astro';
+import { media } from '../data/media';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found" description="The page you were looking for could not be found." noindex>
+  <section class="nf theme-dark">
+    <Photo src={media.aboutStory.src} alt="" class="nf__bg" sizes="100vw" hideLabel />
+    <div class="container nf__inner">
+      <p class="label nf__code">Error 404</p>
+      <h1 class="display">This opening doesn’t exist.</h1>
+      <p class="lead muted">The page you were looking for has moved or never existed. Try one of these instead:</p>
+      <div class="btn-row">
+        <a href="/" class="btn btn--light">Home <Icon name="arrow" class="btn__arrow" /></a>
+        <a href="/projects/" class="btn btn--ghost">Projects</a>
+        <a href="/services/" class="btn btn--ghost">Services</a>
+        <a href="/contact/" class="btn btn--ghost">Contact</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: calc(100svh - var(--header-h));
+    overflow: hidden;
+  }
+
+  .nf :global(.nf__bg) {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    opacity: 0.25;
+  }
+
+  .nf__inner {
+    display: grid;
+    gap: 1.5rem;
+    align-content: center;
+    justify-items: start;
+    padding-block: 5rem;
+  }
+
+  .nf__inner .display {
+    max-width: 14ch;
+  }
+
+  .nf__code {
+    color: var(--accent-on-dark);
+  }
+</style>

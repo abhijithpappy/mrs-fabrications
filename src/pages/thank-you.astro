@@ -1,0 +1,61 @@
+---
+import Icon from '../components/Icon.astro';
+import { business } from '../config/business';
+import { hasPhone, hasWhatsApp, phoneHref, whatsappHref } from '../lib/contact';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Thank you" description="Your enquiry has been sent." noindex>
+  <section class="section thanks">
+    <div class="container container--narrow thanks__inner">
+      <span class="thanks__icon"><Icon name="check" /></span>
+      <p class="eyebrow label"><span>Enquiry received</span></p>
+      <h1 class="h1">Thank you.</h1>
+      <p class="lead muted">
+        Your enquiry has reached {business.name}. We’ll be in touch soon to talk through your project{
+          hasPhone ? ' — if it’s urgent, please call us.' : '.'
+        }
+      </p>
+      <div class="btn-row">
+        <a href="/projects/" class="btn">Browse our projects <Icon name="arrow" class="btn__arrow" /></a>
+        {
+          hasPhone && (
+            <a href={phoneHref} class="btn btn--ghost">
+              <Icon name="phone" /> {business.phone}
+            </a>
+          )
+        }
+        {
+          hasWhatsApp && (
+            <a href={whatsappHref()} class="btn btn--whatsapp" target="_blank" rel="noopener">
+              <Icon name="whatsapp" /> WhatsApp
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .thanks__inner {
+    display: grid;
+    gap: 1.5rem;
+    justify-items: start;
+    padding-block: 4rem;
+  }
+
+  .thanks__icon {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .thanks__icon :global(svg) {
+    width: 2rem;
+    height: 2rem;
+  }
+</style>

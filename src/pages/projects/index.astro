@@ -1,0 +1,310 @@
+---
+import { getCollection } from 'astro:content';
+import CTASection from '../../components/CTASection.astro';
+import PageHero from '../../components/PageHero.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { business } from '../../config/business';
+import { media } from '../../data/media';
+import { locationLabel } from '../../lib/contact';
+import { breadcrumbSchema } from '../../lib/schema';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const services = (await getCollection('services', ({ data }) => data.published)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const serviceIds = new Set(services.map((s) => s.id));
+const projects = (
+  await getCollection('projects', ({ data }) => data.published && serviceIds.has(data.category.id))
+).sort((a, b) => a.data.order - b.data.order);
+
+// Only offer filters for categories that actually have projects.
+const categories = services
+  .map((s) => ({
+    id: s.id,
+    label: s.data.shortTitle,
+    count: projects.filter((p) => p.data.category.id === s.id).length,
+  }))
+  .filter((c) => c.count > 0);
+
+const labelFor = Object.fromEntries(services.map((s) => [s.id, s.data.shortTitle]));
+const hasSamples = projects.some((p) => p.data.sample);
+
+// Repeating editorial layout: wide + tall, tall + wide, three squares.
+const slots = ['w', 't', 't', 'w', 's', 's', 's'];
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Projects', href: '/projects/' },
+];
+---
+
+<BaseLayout
+  title="Projects"
+  description={`Aluminium and glass projects by ${business.name}: windows, doors, partitions, sliding systems and shopfronts for homes and businesses in ${locationLabel}.`}
+  image={media.projectsHero.src}
+  imageAlt={media.projectsHero.alt}
+  schema={[breadcrumbSchema(crumbs, Astro.site)]}
+>
+  <PageHero
+    label="Projects"
+    title="Work that speaks for itself"
+    intro="Windows, doors, partitions, sliding systems and shopfronts — browse by category and open any project to see the details."
+    crumbs={crumbs}
+  />
+
+  <section class="section portfolio" aria-label="Project gallery">
+    <div class="container">
+      {
+        hasSamples && (
+          <p class="notice" role="note">
+            <span class="label">Please note</span>
+            <span>
+              Photos marked “Representative image” are illustrative stock photography showing the type of work we
+              do. They are not photographs of our completed projects.
+            </span>
+          </p>
+        )
+      }
+
+      <div class="filters" data-filters>
+        <p class="label muted filters__label" id="filter-label">Filter by category</p>
+        <div class="filters__buttons" role="group" aria-labelledby="filter-label">
+          <button type="button" class="chip" aria-pressed="true" data-filter="all">
+            All <span class="chip__count">{projects.length}</span>
+          </button>
+          {
+            categories.map((c) => (
+              <button type="button" class="chip" aria-pressed="false" data-filter={c.id}>
+                {c.label} <span class="chip__count">{c.count}</span>
+              </button>
+            ))
+          }
+        </div>
+        <p class="visually-hidden" aria-live="polite" data-filter-status></p>
+      </div>
+
+      <ul class="grid" role="list" data-grid>
+        {
+          projects.map((project, i) => (
+            <li class="grid__item" data-category={project.data.category.id} data-slot={slots[i % slots.length]}>
+              <ProjectCard
+                project={project}
+                categoryLabel={labelFor[project.data.category.id]}
+                ratio={null}
+                sizes="(min-width: 64rem) 50vw, (min-width: 40rem) 50vw, 100vw"
+                headingLevel="h2"
+              />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <CTASection title="Want results like these?" />
+</BaseLayout>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-filters]');
+  const grid = document.querySelector<HTMLElement>('[data-grid]');
+
+  if (root && grid) {
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+    const items = Array.from(grid.querySelectorAll<HTMLElement>('[data-category]'));
+    const status = root.querySelector<HTMLElement>('[data-filter-status]');
+    const slots = ['w', 't', 't', 'w', 's', 's', 's'];
+
+    const apply = (filter: string, updateUrl = true) => {
+      const valid = buttons.some((b) => b.dataset.filter === filter) ? filter : 'all';
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === valid)));
+
+      let visible = 0;
+      items.forEach((item) => {
+        const show = valid === 'all' || item.dataset.category === valid;
+        item.hidden = !show;
+        if (show) {
+          item.dataset.slot = slots[visible % slots.length];
+          item.classList.remove('is-entering');
+          void item.offsetWidth; // restart the entrance animation
+          item.classList.add('is-entering');
+          visible++;
+        }
+      });
+
+      const label = buttons.find((b) => b.dataset.filter === valid)?.firstChild?.textContent?.trim() ?? 'All';
+      if (status) {
+        status.textContent =
+          valid === 'all' ? `Showing all ${visible} projects` : `Showing ${visible} ${label.toLowerCase()} projects`;
+      }
+
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (valid === 'all') url.searchParams.delete('category');
+        else url.searchParams.set('category', valid);
+        history.replaceState(null, '', url);
+      }
+    };
+
+    buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter!)));
+
+    const initial = new URLSearchParams(window.location.search).get('category');
+    if (initial) apply(initial, false);
+  }
+</script>
+
+<style>
+  .notice {
+    display: grid;
+    gap: 0.4rem;
+    margin-bottom: 2.5rem;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid var(--accent);
+    background: var(--mist);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+
+  .notice .label {
+    color: var(--accent-text);
+  }
+
+  .filters {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 5;
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+    margin-inline: calc(var(--gutter) * -1);
+    padding: 1rem var(--gutter);
+    background: rgb(244 242 238 / 0.94);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .filters__buttons {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: none;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .chip:hover {
+    border-color: var(--ink);
+  }
+
+  .chip[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--white);
+  }
+
+  .chip__count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    opacity: 0.65;
+  }
+
+  @media (min-width: 64rem) {
+    .filters {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .filters__buttons {
+      flex-wrap: wrap;
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+  }
+
+  .grid {
+    display: grid;
+    gap: clamp(3rem, 5vw, 4.5rem) clamp(1rem, 2.5vw, 2.5rem);
+  }
+
+  .grid__item[hidden] {
+    display: none;
+  }
+
+  .grid__item :global(.photo) {
+    aspect-ratio: 4 / 3;
+  }
+
+  @media (min-width: 40rem) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid__item :global(.photo) {
+      aspect-ratio: 4 / 5;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: repeat(12, 1fr);
+      align-items: start;
+    }
+
+    .grid__item[data-slot='w'] {
+      grid-column: span 7;
+    }
+
+    .grid__item[data-slot='w'] :global(.photo) {
+      aspect-ratio: 4 / 3;
+    }
+
+    .grid__item[data-slot='t'] {
+      grid-column: span 5;
+    }
+
+    .grid__item[data-slot='t'] :global(.photo) {
+      aspect-ratio: 5 / 6;
+    }
+
+    .grid__item[data-slot='s'] {
+      grid-column: span 4;
+    }
+
+    .grid__item[data-slot='s'] :global(.photo) {
+      aspect-ratio: 1 / 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .grid__item.is-entering {
+      animation: item-in 0.6s var(--ease-out) both;
+    }
+
+    @keyframes item-in {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+    }
+  }
+</style>

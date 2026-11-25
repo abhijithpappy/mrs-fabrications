@@ -1,0 +1,62 @@
+---
+/**
+ * Section heading: mono index label ("02 — Services"), title, optional intro
+ * and an actions slot aligned to the right on wide screens.
+ */
+interface Props {
+  index?: string;
+  label: string;
+  title: string;
+  intro?: string;
+  id?: string;
+  as?: 'h1' | 'h2';
+  size?: 'h1' | 'h2';
+  class?: string;
+}
+
+const { index, label, title, intro, id, as: Tag = 'h2', size = 'h2', class: className } = Astro.props;
+const hasActions = Astro.slots.has('actions');
+---
+
+<div class:list={['section-heading', hasActions && 'section-heading--actions', className]} data-reveal>
+  <div class="section-heading__main">
+    <p class="eyebrow label">
+      {index && <span class="eyebrow__index">{index}</span>}
+      <span>{label}</span>
+    </p>
+    <Tag class={size} id={id}>{title}</Tag>
+    {intro && <p class="section-heading__intro lead muted">{intro}</p>}
+  </div>
+  {
+    hasActions && (
+      <div class="section-heading__actions">
+        <slot name="actions" />
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .section-heading {
+    display: grid;
+    gap: 2rem;
+    margin-bottom: clamp(2.5rem, 5vw, 4.5rem);
+  }
+
+  .section-heading__main {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 52rem;
+  }
+
+  .section-heading__intro {
+    max-width: 40rem;
+  }
+
+  @media (min-width: 64rem) {
+    .section-heading--actions {
+      grid-template-columns: 1fr auto;
+      align-items: end;
+    }
+  }
+</style>

@@ -1,0 +1,163 @@
+---
+import { media } from '../data/media';
+import { processSteps } from '../data/copy';
+import Photo from './Photo.astro';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+  index?: string;
+  showImages?: boolean;
+}
+const { index, showImages = true } = Astro.props;
+---
+
+<section class="section theme-graphite process" aria-labelledby="process-title">
+  <div class="container">
+    <SectionHeading
+      index={index}
+      label="Our process"
+      title="From first measure to final fit"
+      intro="Five clear steps, one team. You always know what happens next and who to call."
+      id="process-title"
+    />
+
+    <ol class="process__steps" role="list">
+      {
+        processSteps.map((step, i) => (
+          <li class="process__step" data-reveal style={`--reveal-delay: ${i * 0.08}s`}>
+            <span class="process__num" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="h4">
+              <span class="visually-hidden">Step {i + 1}: </span>
+              {step.title}
+            </h3>
+            <p class="muted">{step.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+
+    {
+      showImages && (
+        <div class="process__images">
+          <Photo
+            src={media.process.measurement.src}
+            alt={media.process.measurement.alt}
+            ratio="4 / 3"
+            sizes="(min-width: 48rem) 33vw, 100vw"
+            reveal
+          />
+          <Photo
+            src={media.process.design.src}
+            alt={media.process.design.alt}
+            ratio="4 / 3"
+            sizes="(min-width: 48rem) 33vw, 100vw"
+            reveal
+          />
+          <Photo
+            src={media.process.fabrication.src}
+            alt={media.process.fabrication.alt}
+            ratio="4 / 3"
+            sizes="(min-width: 48rem) 33vw, 100vw"
+            reveal
+          />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .process__steps {
+    display: grid;
+    counter-reset: step;
+  }
+
+  .process__step {
+    position: relative;
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.75rem 0 1.75rem 4rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .process__num {
+    position: absolute;
+    left: 0;
+    top: 1.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--accent-on-dark);
+  }
+
+  .process__step p {
+    max-width: 30rem;
+    font-size: var(--fs-small);
+  }
+
+  .process__images {
+    display: grid;
+    gap: 1rem;
+    margin-top: clamp(3rem, 6vw, 5rem);
+  }
+
+  @media (min-width: 48rem) {
+    .process__images {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .process__steps {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 2rem;
+    }
+
+    .process__step {
+      padding: 2rem 0 0;
+      align-content: start;
+      border-top: 0;
+    }
+
+    /* Measured line with ticks, like a tape */
+    .process__step::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: -2rem;
+      height: 1px;
+      background: var(--line-strong);
+    }
+
+    .process__step:last-child::before {
+      right: 0;
+    }
+
+    .process__step::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 0;
+      width: 11px;
+      height: 11px;
+      border: 1px solid var(--accent-on-dark);
+      background: var(--graphite);
+      transform: rotate(45deg);
+    }
+
+    .process__num {
+      position: static;
+      margin-top: 1rem;
+      font-size: 3rem;
+      font-family: var(--font-sans);
+      font-stretch: 115%;
+      font-weight: 300;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--white);
+    }
+  }
+</style>

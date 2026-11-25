@@ -1,0 +1,120 @@
+---
+/**
+ * Full-bleed call to action: quote, WhatsApp and phone.
+ */
+import type { ImageMetadata } from 'astro';
+import { business } from '../config/business';
+import { media } from '../data/media';
+import { hasPhone, hasWhatsApp, phoneHref, whatsappHref } from '../lib/contact';
+import Icon from './Icon.astro';
+import Photo from './Photo.astro';
+
+interface Props {
+  title?: string;
+  text?: string;
+  /** Preselect a service on the enquiry form, e.g. 'aluminium-windows'. */
+  service?: string;
+  whatsappMessage?: string;
+  image?: ImageMetadata;
+  imageAlt?: string;
+}
+
+const {
+  title = 'Have a project in mind?',
+  text = 'Tell us about your space. We’ll visit, measure and give you a clear, itemised quotation — with no obligation.',
+  service,
+  whatsappMessage,
+  image = media.cta.src,
+  imageAlt = media.cta.alt,
+} = Astro.props;
+
+const quoteHref = service ? `/contact/?service=${service}#enquiry` : '/contact/#enquiry';
+---
+
+<section class="cta theme-dark" aria-labelledby="cta-title">
+  <Photo src={image} alt={imageAlt} class="cta__bg" sizes="100vw">
+    <span class="cta__shade" aria-hidden="true"></span>
+  </Photo>
+  <div class="cta__inner container on-image">
+    <p class="eyebrow label"><span>Free site visit &amp; quotation</span></p>
+    <h2 id="cta-title" class="display cta__title" data-reveal>{title}</h2>
+    <div class="cta__bottom" data-reveal>
+      <p class="lead cta__text">{text}</p>
+      <div class="btn-row">
+        <a href={quoteHref} class="btn btn--accent">
+          Get a free quote
+          <Icon name="arrow" class="btn__arrow" />
+        </a>
+        {
+          hasWhatsApp && (
+            <a href={whatsappHref(whatsappMessage)} class="btn btn--whatsapp" target="_blank" rel="noopener">
+              <Icon name="whatsapp" /> WhatsApp us
+            </a>
+          )
+        }
+        {
+          hasPhone && (
+            <a href={phoneHref} class="btn btn--ghost">
+              <Icon name="phone" /> Call {business.phone}
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .cta :global(.cta__bg) {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  .cta__shade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to top, rgb(20 22 25 / 0.92) 10%, rgb(20 22 25 / 0.55) 60%, rgb(20 22 25 / 0.7)),
+      linear-gradient(to right, rgb(20 22 25 / 0.6), transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 1.75rem;
+    padding-block: clamp(6rem, 14vw, 12rem) clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .cta__title {
+    max-width: 14ch;
+  }
+
+  .cta__bottom {
+    display: grid;
+    gap: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgb(255 255 255 / 0.2);
+  }
+
+  .cta__text {
+    max-width: 34rem;
+    color: rgb(255 255 255 / 0.82);
+  }
+
+  @media (min-width: 64rem) {
+    .cta__bottom {
+      grid-template-columns: 1fr auto;
+      align-items: end;
+    }
+  }
+</style>

@@ -1,0 +1,81 @@
+---
+import type { ImageMetadata } from 'astro';
+import fontUrl from '../assets/fonts/archivo-variable-subset.woff2?url';
+import '../styles/global.css';
+import { siteSettings } from '../config/site';
+import DevSetupNotice from '../components/DevSetupNotice.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import SEO from '../components/SEO.astro';
+import WhatsAppFloat from '../components/WhatsAppFloat.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: ImageMetadata;
+  imageAlt?: string;
+  noindex?: boolean;
+  schema?: (Record<string, unknown> | null)[];
+  /** Transparent header over a full-bleed hero (home page). */
+  overlayHeader?: boolean;
+  /** Prefilled WhatsApp message for this page's floating button. */
+  whatsappMessage?: string;
+}
+
+const { overlayHeader = false, whatsappMessage, ...seo } = Astro.props;
+---
+
+<!doctype html>
+<html lang={siteSettings.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#141619" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+    <SEO {...seo} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header overlay={overlayHeader} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <WhatsAppFloat message={whatsappMessage} />
+    <DevSetupNotice />
+
+    <script>
+      // Reveal-on-scroll for elements marked [data-reveal]. Content is fully
+      // visible without JS or with reduced motion (see global.css).
+      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      if ('IntersectionObserver' in window && items.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+        );
+        items.forEach((el) => io.observe(el));
+      } else {
+        items.forEach((el) => el.classList.add('is-revealed'));
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  main:focus {
+    outline: none;
+  }
+</style>

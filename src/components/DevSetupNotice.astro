@@ -1,0 +1,59 @@
+---
+/**
+ * Development-only checklist of business details still missing from
+ * src/config/business.ts. Never rendered in production builds.
+ */
+import { missingBusinessDetails } from '../lib/contact';
+
+const missing = import.meta.env.DEV ? missingBusinessDetails() : [];
+---
+
+{
+  missing.length > 0 && (
+    <details class="dev-setup">
+      <summary>Setup · {missing.length} details missing</summary>
+      <p>
+        Add these in <code>src/config/business.ts</code>. Items that depend on them stay hidden until then. (Shown in
+        development only.)
+      </p>
+      <ul>
+        {missing.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
+<style>
+  .dev-setup {
+    position: fixed;
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+    max-width: 19rem;
+    padding: 0.75rem 1rem;
+    border: 1px dashed #e0692c;
+    background: #fffaf5;
+    color: #141619;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  }
+
+  .dev-setup summary {
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .dev-setup p {
+    margin-block: 0.5rem;
+  }
+
+  .dev-setup ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+</style>

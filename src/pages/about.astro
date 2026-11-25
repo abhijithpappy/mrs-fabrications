@@ -1,0 +1,416 @@
+---
+import { getCollection } from 'astro:content';
+import CTASection from '../components/CTASection.astro';
+import Icon from '../components/Icon.astro';
+import PageHero from '../components/PageHero.astro';
+import Photo from '../components/Photo.astro';
+import ProcessSteps from '../components/ProcessSteps.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import { business } from '../config/business';
+import { qualityChecks, values } from '../data/copy';
+import { media } from '../data/media';
+import { locationLabel } from '../lib/contact';
+import { breadcrumbSchema } from '../lib/schema';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const services = (await getCollection('services', ({ data }) => data.published)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about/' },
+];
+
+// Only facts that have been configured are shown.
+const facts = [
+  { label: 'Based in', value: `${locationLabel}, ${business.address.country}` },
+  business.foundedYear && { label: 'Established', value: String(business.foundedYear) },
+  business.ownerName && { label: 'Led by', value: business.ownerName },
+  business.stats.yearsExperience && { label: 'Experience', value: `${business.stats.yearsExperience}+ years` },
+  business.stats.projectsCompleted && { label: 'Projects completed', value: `${business.stats.projectsCompleted}+` },
+  business.serviceArea && { label: 'Service area', value: business.serviceArea },
+  { label: 'What we do', value: 'Design · Fabrication · Installation' },
+].filter(Boolean) as { label: string; value: string }[];
+
+const workshopLayout = ['ws--a', 'ws--b', 'ws--c', 'ws--d'];
+---
+
+<BaseLayout
+  title="About us"
+  description={`About ${business.name} — an aluminium and glass fabrication business in ${locationLabel}. How we work, what we value and the craftsmanship behind every installation.`}
+  image={media.aboutHero.src}
+  imageAlt={media.aboutHero.alt}
+  schema={[breadcrumbSchema(crumbs, Astro.site)]}
+>
+  <PageHero
+    label="About us"
+    title="Made to measure. Built to last."
+    intro={`${business.name} is an aluminium and glass fabrication business based in ${locationLabel}. We design, fabricate and install windows, doors, partitions, sliding systems and shopfronts for homes and businesses.`}
+    crumbs={crumbs}
+    image={media.aboutHero.src}
+    imageAlt={media.aboutHero.alt}
+  />
+
+  <!-- Who we are -->
+  <section class="section" aria-labelledby="story-title">
+    <div class="container story">
+      <div class="story__head">
+        <p class="eyebrow label" data-reveal><span class="eyebrow__index">01</span><span>Who we are</span></p>
+        <h2 id="story-title" class="h2" data-reveal>Aluminium and glass work, done properly.</h2>
+      </div>
+      <div class="story__body prose" data-reveal>
+        <p>
+          We focus on one craft: turning aluminium and glass into windows, doors, partitions and frontages that fit
+          their openings perfectly and work smoothly every day.
+        </p>
+        <p>
+          We work on new homes and renovations, offices and shops. Every job is handled by one team from start to
+          finish — we visit the site to measure, help you choose the right system and finish, fabricate the work in
+          our workshop and install it ourselves. There is no hand-off between the people who promise and the people
+          who deliver.
+        </p>
+        <p>
+          That end-to-end responsibility is what keeps the quality consistent, the schedule realistic and the
+          conversation simple.
+        </p>
+      </div>
+      <dl class="facts" data-reveal>
+        {
+          facts.map((f) => (
+            <div class="facts__row">
+              <dt class="label muted">{f.label}</dt>
+              <dd>{f.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- Mission & values -->
+  <section class="section theme-dark" aria-labelledby="mission-title">
+    <div class="container">
+      <SectionHeading index="02" label="Mission & values" title="What we stand for" id="mission-title" />
+      <p class="mission display-quote" data-reveal>
+        Our mission is to make aluminium and glass work that <em>fits perfectly</em>,{' '}
+        <em>works smoothly</em> and <em>lasts</em> — delivered honestly, on time and with respect for your space.
+      </p>
+      <ul class="values" role="list">
+        {
+          values.map((v, i) => (
+            <li class="values__item" data-reveal style={`--reveal-delay: ${i * 0.06}s`}>
+              <span class="label values__num">{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="h3">{v.title}</h3>
+              <p class="muted">{v.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Workshop -->
+  <section class="section" aria-labelledby="workshop-title">
+    <div class="container">
+      <SectionHeading
+        index="03"
+        label="Workshop & team"
+        title="Where the work takes shape"
+        intro="Measuring, cutting, drilling and assembling happen under one roof, where every frame can be checked before it leaves for site."
+        id="workshop-title"
+      />
+      <div class="workshop">
+        {
+          media.workshop.map((photo, i) => (
+            <Photo
+              src={photo.src}
+              alt={photo.alt}
+              class={`ws ${workshopLayout[i % workshopLayout.length]}`}
+              sizes="(min-width: 64rem) 50vw, 100vw"
+              reveal
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Quality -->
+  <section class="section theme-mist" aria-labelledby="quality-title">
+    <div class="container quality">
+      <Photo
+        src={media.aboutStory.src}
+        alt={media.aboutStory.alt}
+        ratio="4 / 5"
+        sizes="(min-width: 64rem) 40vw, 100vw"
+        class="quality__photo"
+        reveal
+      />
+      <div class="quality__content">
+        <p class="eyebrow label" data-reveal><span class="eyebrow__index">04</span><span>Quality & workmanship</span></p>
+        <h2 id="quality-title" class="h2" data-reveal>Quality you notice every time you open a window.</h2>
+        <p class="lead muted" data-reveal>
+          Good fabrication is mostly invisible: frames that are square, joints that are tight, seals that keep the rain
+          out and hardware that still runs smoothly years later. These are the checks we build into every job.
+        </p>
+        <ul class="checks" role="list">
+          {
+            qualityChecks.map((item, i) => (
+              <li data-reveal style={`--reveal-delay: ${i * 0.05}s`}>
+                <Icon name="check" />
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Expertise -->
+  <section class="section" aria-labelledby="expertise-title">
+    <div class="container">
+      <SectionHeading
+        index="05"
+        label="Experience & expertise"
+        title="What we work on"
+        intro="Our expertise covers the full range of aluminium and glass systems for residential and commercial spaces."
+        id="expertise-title"
+      />
+      <ul class="expertise" role="list">
+        {
+          services.map((s, i) => (
+            <li data-reveal style={`--reveal-delay: ${i * 0.04}s`}>
+              <a href={`/services/${s.id}/`}>
+                <span class="label muted">{String(i + 1).padStart(2, '0')}</span>
+                <span class="h4">{s.data.title}</span>
+                <Icon name="arrow-up-right" />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <ProcessSteps index="06" showImages={false} />
+  <CTASection title="Let’s talk about your project" />
+</BaseLayout>
+
+<style>
+  .story {
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+
+  .story__head {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  .story__head .h2 {
+    max-width: 14ch;
+  }
+
+  .facts {
+    margin: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .facts__row {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.6fr) 1fr;
+    gap: 1rem;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  @media (min-width: 64rem) {
+    .story {
+      grid-template-columns: 1fr 1fr;
+      column-gap: clamp(3rem, 6vw, 7rem);
+    }
+
+    .story__head {
+      grid-row: span 2;
+      position: sticky;
+      top: calc(var(--header-h) + 2rem);
+    }
+  }
+
+  .mission {
+    max-width: 30ch;
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+    font-size: var(--fs-h2);
+    font-stretch: 106%;
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .mission em {
+    font-style: normal;
+    color: var(--accent-on-dark);
+  }
+
+  .values {
+    display: grid;
+    gap: 0 2rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .values__item {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    padding-block: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .values__num {
+    color: var(--accent-on-dark);
+  }
+
+  @media (min-width: 48rem) {
+    .values {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .values {
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 0;
+    }
+
+    .values__item {
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 0;
+    }
+  }
+
+  .workshop {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .workshop :global(.ws) {
+    aspect-ratio: 4 / 3;
+  }
+
+  @media (min-width: 48rem) {
+    .workshop {
+      grid-template-columns: repeat(12, 1fr);
+    }
+
+    .workshop :global(.ws--a) {
+      grid-column: span 7;
+      aspect-ratio: 16 / 11;
+    }
+
+    .workshop :global(.ws--b) {
+      grid-column: span 5;
+      aspect-ratio: auto;
+    }
+
+    .workshop :global(.ws--c) {
+      grid-column: span 5;
+      aspect-ratio: auto;
+    }
+
+    .workshop :global(.ws--d) {
+      grid-column: span 7;
+      aspect-ratio: 16 / 11;
+    }
+  }
+
+  .quality {
+    display: grid;
+    gap: clamp(3rem, 6vw, 6rem);
+  }
+
+  .quality__content {
+    display: grid;
+    gap: 1.5rem;
+    align-content: center;
+  }
+
+  .quality__content .lead {
+    max-width: 36rem;
+  }
+
+  .checks {
+    display: grid;
+    margin-top: 1rem;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .checks li {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--line);
+    font-weight: 500;
+  }
+
+  .checks :global(svg) {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15em;
+    color: var(--accent-text);
+  }
+
+  @media (min-width: 64rem) {
+    .quality {
+      grid-template-columns: 0.85fr 1.15fr;
+      align-items: center;
+    }
+  }
+
+  .expertise {
+    display: grid;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .expertise a {
+    display: grid;
+    grid-template-columns: 3rem 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding-block: 1.4rem;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .expertise a :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--text-muted);
+    transition:
+      transform 0.35s var(--ease-out),
+      color 0.2s ease;
+  }
+
+  .expertise a:hover :global(svg) {
+    color: var(--accent-text);
+    transform: translate(3px, -3px);
+  }
+
+  @media (min-width: 48rem) {
+    .expertise {
+      grid-template-columns: repeat(2, 1fr);
+      column-gap: 3rem;
+    }
+  }
+</style>

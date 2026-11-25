@@ -1,0 +1,100 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+import Photo from './Photo.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  categoryLabel: string;
+  /** Aspect ratio for the photo; null lets the parent control it via CSS. */
+  ratio?: string | null;
+  sizes?: string;
+  headingLevel?: 'h2' | 'h3';
+}
+
+const { project, categoryLabel, ratio = '4 / 3', sizes = '(min-width: 64rem) 45vw, 100vw', headingLevel = 'h3' } =
+  Astro.props;
+const { data } = project;
+const Heading = headingLevel;
+const href = `/projects/${project.id}/`;
+---
+
+<article class="project-card">
+  <a href={href} class="project-card__link">
+    <Photo src={data.cover} alt={data.coverAlt} ratio={ratio ?? undefined} sizes={sizes} class="project-card__photo" />
+    <div class="project-card__body">
+      <p class="project-card__meta label">
+        <span>{categoryLabel}</span>
+        <span aria-hidden="true">·</span>
+        <span>{data.sector}</span>
+        {data.location && <span aria-hidden="true">·</span>}
+        {data.location && <span>{data.location}</span>}
+      </p>
+      <Heading class="h4 project-card__title">{data.title}</Heading>
+      <span class="project-card__cta">
+        View project <Icon name="arrow" />
+      </span>
+    </div>
+  </a>
+</article>
+
+<style>
+  .project-card__link {
+    display: grid;
+    gap: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .project-card__link :global(.photo__img) {
+    transition: transform 1.2s var(--ease-out);
+  }
+
+  .project-card__link:hover :global(.photo__img),
+  .project-card__link:focus-visible :global(.photo__img) {
+    transform: scale(1.04);
+  }
+
+  .project-card__body {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .project-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .project-card__meta span:first-child {
+    color: var(--accent-text);
+  }
+
+  .project-card__title {
+    max-width: 30ch;
+  }
+
+  .project-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .project-card__cta :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .project-card__link:hover .project-card__cta :global(svg) {
+    transform: translateX(4px);
+  }
+
+  .project-card__link:focus-visible {
+    outline-offset: 6px;
+  }
+</style>
